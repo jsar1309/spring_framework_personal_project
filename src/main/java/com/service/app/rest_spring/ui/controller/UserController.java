@@ -1,6 +1,8 @@
 package com.service.app.rest_spring.ui.controller;
 
 import com.service.app.rest_spring.dto.User;
+import com.service.app.rest_spring.userService.IUserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,32 +17,26 @@ import java.util.UUID;
 @RequestMapping("users") //  http://localhost:8080/users
 public class UserController {
 
-    Map<String, User> users;
+    @Autowired
+    IUserService iUserService;
 
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public ResponseEntity getUsers(@RequestParam(required = false) String page,
                                    @RequestParam(required = false) String elements){
+        Map<String, User> users = iUserService.getUsers();
         return new ResponseEntity(users, HttpStatus.OK);
     }
 
     @GetMapping(path = "/{user-id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public ResponseEntity getUser(@PathVariable(value = "user-id") String userId){
-        return new ResponseEntity(users.get(userId), HttpStatus.OK);
+        User user = iUserService.getUser(userId);
+        return new ResponseEntity(user, HttpStatus.OK);
     }
 
     @PostMapping( consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
                   produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public ResponseEntity createUser(@Valid @RequestBody User user){
-        User response = new User();
-        response.setFirstName(user.getFirstName());
-        response.setLastName(user.getLastName());
-        response.setEmail(user.getEmail());
-        response.setUserId(UUID.randomUUID().toString());
-
-        if (users == null)
-            users = new HashMap<>();
-        users.put(response.getUserId(), response);
-
+        User response = iUserService.createUser(user);
         return new ResponseEntity(response, HttpStatus.CREATED);
     }
 
@@ -48,20 +44,13 @@ public class UserController {
                 consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public ResponseEntity updateUser(@PathVariable(value = "user-id") String userId,
                                      @RequestBody User user){
-        User actual = users.get(userId);
-        if (user.getFirstName() != null)
-            actual.setFirstName(user.getFirstName());
-        if (user.getLastName() != null)
-            actual.setLastName(user.getLastName());
-        if (user.getEmail() != null)
-            actual.setEmail(user.getEmail());
-        users.replace(userId, actual);
+        User actual = iUserService.updateUser(user, userId);
         return new ResponseEntity(actual, HttpStatus.CREATED);
     }
 
     @DeleteMapping(path = "/{user-id}")
     public ResponseEntity deleteUser(@PathVariable(value = "user-id") String userId){
-        users.remove(userId);
+        iUserService.deleteUser(userId);
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
 }
